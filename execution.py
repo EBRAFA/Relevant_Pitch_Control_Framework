@@ -2,7 +2,8 @@
 import numpy as np
 import pandas as pd
 import d6tflow as d6t
-import luigi
+import luigi as lg
+from tqdm import tqdm
 
 # Project imports
 import dataprocessing as dp
@@ -11,7 +12,7 @@ import relevantpitchcontrol as rpc
 
 @d6t.inherits(gt.PitchInfo)
 class RPCExecution(d6t.tasks.TaskPickle):
-    gameid = luigi.IntParameter()
+    gameid = lg.IntParameter()
 
     def requires(self):
         return {'events': self.clone(dp.PrepData),
@@ -35,14 +36,16 @@ class RPCExecution(d6t.tasks.TaskPickle):
         home_rows = events[events.Team == 'Home'].index
         away_rows = events[events.Team == 'Away'].index
 
-        for i in range(len(home_rows)):
+        for i in tqdm(range(len(home_rows))):
             d6t.settings.check_dependencies = False
+            d6t.settings.log_level = 'ERROR'
             d6t.run(rpc.CalcRelevantPitchControlFrame(gameid=self.gameid, rownumber=i))
             RPCa_Home[i] = rpc.CalcRelevantPitchControlFrame(gameid=self.gameid, rownumber=i).output().load()['RPCa']
             RPCd_Away[i] = rpc.CalcRelevantPitchControlFrame(gameid=self.gameid, rownumber=i).output().load()['RPCd']
 
-        for i in range(len(away_rows)):
+        for i in tqdm(range(len(away_rows))):
             d6t.settings.check_dependencies = False
+            d6t.settings.log_level = 'ERROR'
             d6t.run(rpc.CalcRelevantPitchControlFrame(gameid=self.gameid, rownumber=i))
             RPCa_Away[i] = rpc.CalcRelevantPitchControlFrame(gameid=self.gameid, rownumber=i).output().load()['RPCa']
             RPCd_Home[i] = rpc.CalcRelevantPitchControlFrame(gameid=self.gameid, rownumber=i).output().load()['RPCd']

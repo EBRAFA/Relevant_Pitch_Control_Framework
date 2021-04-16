@@ -122,6 +122,7 @@ class CalcPitchControlFrame(d6t.tasks.TaskPickle):
         for i in range(len(ygrid)):
             for j in range(len(xgrid)):
                 target_position = np.array([xgrid[j], ygrid[i]])
+                d6t.settings.log_level = 'ERROR'
                 d6t.run(CalcPitchControlTarget(gameid=self.gameid, rownumber=self.rownumber, target_position=target_position), execution_summary=False)
                 PCT = CalcPitchControlTarget(gameid=self.gameid, rownumber=self.rownumber, target_position=target_position).output().load()
                 PPCFa[-1, i, j] = PCT['PPCFatt']

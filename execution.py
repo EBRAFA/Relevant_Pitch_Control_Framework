@@ -6,66 +6,45 @@ import luigi
 
 # Project imports
 import dataprocessing as dp
+import generaltasks as gt
 import relevantpitchcontrol as rpc
 
-class SelectEvents(d6t.tasks.TaskPickle):
+@d6t.inherits(gt.PitchInfo)
+class RPCExecution(d6t.tasks.TaskPickle):
     gameid = luigi.IntParameter()
 
     def requires(self):
-        return dp.PrepData(gameid=self.gameid)
+        return {'events': self.clone(dp.PrepData),
+                'ids': self.clone(gt.GetPlayerIDs)}
 
     def run(self):
-        events = self.input()['events'].load()
-        unwanted_events = ['SET PIECE', 'BALL OUT', 'FAULT RECEIVED', 'CARD']
-        frames = []
-        possessions = []  # List with team in possession at the moment
+        events = self.input()['events']['events'].load()
+        home_ids = self.input()['ids'].load()['home_ids']
+        away_ids = self.input()['ids'].load()['away_ids']
 
-        for i in range(len(events)):
-            if events.Type[i] not in unwanted_events:
-                frames.append(events['Start Frame'][i])
-                possessions.append(events['Team'][i])
+        # break the pitch down into a grid
+        n_grid_cells_y = int(self.n_grid_cells_x * self.field_dimen[1] / self.field_dimen[0])
+        xgrid = np.linspace(-self.field_dimen[0] / 2., self.field_dimen[0] / 2., self.n_grid_cells_x)
+        ygrid = np.linspace(-self.field_dimen[1] / 2., self.field_dimen[1] / 2., n_grid_cells_y)
 
-        possessions.pop(frames.index(38232))  # Pitch Control integration failed
-        possessions.pop(frames.index(93670))  # Pitch Control integration failed
-        frames.remove(38232)  # Pitch Control integration failed
-        frames.remove(93670)  # Pitch Control integration failed
+        RPCa_Home = np.zeros(shape=(len(events[events.Team == 'Home']), len(home_ids) + 1, len(ygrid), len(xgrid)))
+        RPCd_Home = np.zeros(shape=(len(events[events.Team == 'Away']), len(home_ids) + 1, len(ygrid), len(xgrid)))
+        RPCa_Away = np.zeros(shape=(len(events[events.Team == 'Away']), len(away_ids) + 1, len(ygrid), len(xgrid)))
+        RPCd_Away = np.zeros(shape=(len(events[events.Team == 'Home']), len(away_ids) + 1, len(ygrid), len(xgrid)))
 
-        self.save({'frames': frames, 'possessions': possessions})
+        home_rows = events[events.Team == 'Home'].index
+        away_rows = events[events.Team == 'Away'].index
 
-class RPCVectorization(d6t.tasks.TaskPickle):
-    gameid = luigi.IntParameter()
-
-    def requires(self):
-        return self.clone(SelectEvents)
-
-    def run(self):
-        frames = self.input().load()['frames']
-        possessions = self.input().load()['possessions']
-        rpc_v = np.zeros(shape=(len(frames), 50*32))  # Size of pitch surface
-        #rpc_v_max = []
-
-        for i in range(len(frames)):
+        for i in range(len(home_rows)):
             d6t.settings.check_dependencies = False
-            #d6t.show(rpc.CalcRelevantPitchControlFrame(gameid=self.gameid, rownumber=frames[i]))
-            d6t.run(rpc.CalcRelevantPitchControlFrame(gameid=self.gameid, rownumber=frames[i]))
-            rpc_i = rpc.CalcRelevantPitchControlFrame(gameid=self.gameid, rownumber=frames[i]).output().load()['RPC']
-            # rpc_v_max.append(rpc_i.max())
+            d6t.run(rpc.CalcRelevantPitchControlFrame(gameid=self.gameid, rownumber=i))
+            RPCa_Home[i] = rpc.CalcRelevantPitchControlFrame(gameid=self.gameid, rownumber=i).output().load()['RPCa']
+            RPCd_Away[i] = rpc.CalcRelevantPitchControlFrame(gameid=self.gameid, rownumber=i).output().load()['RPCd']
 
-            if possessions[i] == 'Home':
-                rpc_v[i] = rpc_i.flatten('C')
-            else:
-                rpc_v[i] = np.flip(rpc_i.flatten('C'), 0)
+        for i in range(len(away_rows)):
+            d6t.settings.check_dependencies = False
+            d6t.run(rpc.CalcRelevantPitchControlFrame(gameid=self.gameid, rownumber=i))
+            RPCa_Away[i] = rpc.CalcRelevantPitchControlFrame(gameid=self.gameid, rownumber=i).output().load()['RPCa']
+            RPCd_Home[i] = rpc.CalcRelevantPitchControlFrame(gameid=self.gameid, rownumber=i).output().load()['RPCd']
 
-        nani = np.unique(np.argwhere(np.isnan(rpc_v))[:, 0])
-        frames = np.array(frames)
-        frames = np.delete(frames, nani)
-        possessions = np.array(possessions)
-        possessions = np.delete(possessions, nani)
-        rpc_v = np.delete(rpc_v, nani, axis=0)
-
-        '''home_i = np.argwhere(possessions=='Home')
-        rpc_v = np.delete(rpc_v, home_i, axis=0)
-        frames = np.delete(frames, home_i)
-        possessions = np.delete(possessions, home_i)'''
-
-        self.save({'rpc_v': rpc_v, 'frames': frames, 'possessions': possessions})
+        self.save({'RPCa_Home': RPCa_Home, 'RPCd_Home': RPCd_Home, 'RPCa_Away': RPCa_Away, 'RPCd_Away': RPCd_Away})

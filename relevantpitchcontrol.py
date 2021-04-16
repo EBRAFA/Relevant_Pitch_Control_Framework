@@ -1,5 +1,6 @@
 # Library imports
 import d6tflow as d6t
+import luigi as lg
 import numpy as np
 
 # Project imports
@@ -14,31 +15,29 @@ class CalcRelevantPitchControlFrame(d6t.tasks.TaskPickle):
     each location on the field.
     '''
 
+    tp_norm = lg.BoolParameter(default=True)  # Parameter to normalized or raw transition probability surface
+
     def requires(self):
         return {'pitchcontrol': self.clone(pc.CalcPitchControlFrame),
                 'transitionprobability': self.clone(tp.CalcTransitionProbabilityFrame)}
 
     def run(self):
-        pitchcontrol = self.input()['pitchcontrol'].load()
-        transitionprobability = self.input()['transitionprobability'].load()
+        PPCFa = self.input()['pitchcontrol'].load()['PPCFa']
+        PPCFd = self.input()['pitchcontrol'].load()['PPCFd']
+        xgrid = self.input()['pitchcontrol'].load()['xgrid']
+        ygrid = self.input()['pitchcontrol'].load()['ygrid']
 
-        PPCFa = pitchcontrol['PPCFa']
-        PPCFd = pitchcontrol['PPCFd']
-        TP = transitionprobability['TP']
-        xgrid = pitchcontrol['xgrid']
-        ygrid = pitchcontrol['ygrid']
+        if self.tp_norm:
+            TP = self.input()['transitionprobability'].load()['N_TP']
+        else:
+            TP = self.input()['transitionprobability'].load()['TP']
 
-        #print('RPCa:')
         RPCa = np.zeros(shape=(len(PPCFa), len(ygrid), len(xgrid)))
         for i in range(len(PPCFa)):
             RPCa[i] = PPCFa[i] * TP
-            print(np.sum(RPCa[i]))
 
-        #print()
-        #print('RPCd:')
         RPCd = np.zeros(shape=(len(PPCFd), len(ygrid), len(xgrid)))
         for i in range(len(PPCFd)):
             RPCd[i] = PPCFd[i] * TP
-            #print(np.sum(RPCd[i]))
 
         self.save({'RPCa': RPCa, 'RPCd': RPCd, 'xgrid': xgrid, 'ygrid': ygrid})

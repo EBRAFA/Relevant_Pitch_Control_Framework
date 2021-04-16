@@ -8,13 +8,14 @@ import generaltasks as gt
 import pitchcontrol as pc
 import transitionprobability as tp
 import relevantpitchcontrol as rpc
+import execution as ex
 import visualize as viz
 
 d6t.settings.check_dependencies = False
 
 #d6t.run(dp.PrepData(gameid=2))
 
-#d6t.run(rpc.CalcRelevantPitchControlFrame(gameid=1, rownumber=23061))
+d6t.run(ex.RPCExecution(gameid=1))
 
-d6t.run(viz.PlotFrameTracking(gameid=1, rownumber=5663, do_relevantpitchcontrol='Home'))
+#d6t.run(viz.PlotFrameTracking(gameid=1, rownumber=5663, do_relevantpitchcontrol='Away'))
 #d6t.run(viz.PlotFrameTracking(gameid=1, rownumber=124504, do_transitionprobability=True))

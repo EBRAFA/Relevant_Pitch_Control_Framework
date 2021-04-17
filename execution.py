@@ -39,15 +39,15 @@ class RPCExecution(d6t.tasks.TaskPickle):
         for i in tqdm(range(len(home_rows))):
             d6t.settings.check_dependencies = False
             d6t.settings.log_level = 'ERROR'
-            d6t.run(rpc.CalcRelevantPitchControlFrame(gameid=self.gameid, rownumber=events['Start Frame'].iloc[home_rows[i]], in_execution=True))
-            RPCa_Home[i] = rpc.CalcRelevantPitchControlFrame(gameid=self.gameid, rownumber=events['Start Frame'].iloc[home_rows[i]], in_execution=True).output().load()['RPCa']
-            RPCd_Away[i] = rpc.CalcRelevantPitchControlFrame(gameid=self.gameid, rownumber=events['Start Frame'].iloc[home_rows[i]], in_execution=True).output().load()['RPCd']
+            d6t.run(rpc.CalcRelevantPitchControlFrame(gameid=self.gameid, rownumber=events.loc[home_rows[i], 'Start Frame'], in_execution=True))
+            RPCa_Home[i] = rpc.CalcRelevantPitchControlFrame(gameid=self.gameid, rownumber=events.loc[home_rows[i], 'Start Frame'], in_execution=True).output().load()['RPCa']
+            RPCd_Away[i] = rpc.CalcRelevantPitchControlFrame(gameid=self.gameid, rownumber=events.loc[home_rows[i], 'Start Frame'], in_execution=True).output().load()['RPCd']
 
         for i in tqdm(range(len(away_rows))):
             d6t.settings.check_dependencies = False
             d6t.settings.log_level = 'ERROR'
-            d6t.run(rpc.CalcRelevantPitchControlFrame(gameid=self.gameid, rownumber=events['Start Frame'].iloc[away_rows[i]], in_execution=True))
-            RPCa_Away[i] = rpc.CalcRelevantPitchControlFrame(gameid=self.gameid, rownumber=events['Start Frame'].iloc[away_rows[i]], in_execution=True).output().load()['RPCa']
-            RPCd_Home[i] = rpc.CalcRelevantPitchControlFrame(gameid=self.gameid, rownumber=events['Start Frame'].iloc[away_rows[i]], in_execution=True).output().load()['RPCd']
+            d6t.run(rpc.CalcRelevantPitchControlFrame(gameid=self.gameid, rownumber=events.loc[away_rows[i], 'Start Frame'], in_execution=True))
+            RPCa_Away[i] = rpc.CalcRelevantPitchControlFrame(gameid=self.gameid, rownumber=events.loc[away_rows[i], 'Start Frame'], in_execution=True).output().load()['RPCa']
+            RPCd_Home[i] = rpc.CalcRelevantPitchControlFrame(gameid=self.gameid, rownumber=events.loc[away_rows[i], 'Start Frame'], in_execution=True).output().load()['RPCd']
 
         self.save({'RPCa_Home': RPCa_Home, 'RPCd_Home': RPCd_Home, 'RPCa_Away': RPCa_Away, 'RPCd_Away': RPCd_Away})

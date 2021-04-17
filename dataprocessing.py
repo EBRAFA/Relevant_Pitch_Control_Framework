@@ -31,8 +31,8 @@ class PrepData(d6t.tasks.TaskPickle):
             # to metric coordinates
             x_columns = [c for c in data.columns if c[-1].lower() == 'x']
             y_columns = [c for c in data.columns if c[-1].lower() == 'y']
-            data.loc[:, x_columns] = (data[x_columns] - 0.5) * field_dimen[0]
-            data.loc[:, y_columns] = -1 * (data[y_columns] - 0.5) * field_dimen[1]
+            data.loc[:, x_columns] = (data.loc[:, x_columns] - 0.5) * field_dimen[0]
+            data.loc[:, y_columns] = -1 * (data.loc[:, y_columns] - 0.5) * field_dimen[1]
 
         # calculate players velocities
         for team in [tracking_home, tracking_away]:
@@ -40,7 +40,7 @@ class PrepData(d6t.tasks.TaskPickle):
             player_ids = np.unique([c[:-2] for c in team.columns if c[:4] in ['Home', 'Away']])
 
             # Calculate the timestep from one frame to the next. Should always be 0.04 within the same half
-            dt = team['Time [s]'].diff()
+            dt = team.loc[:, 'Time [s]'].diff()
 
             # index of first frame in second half
             second_half_idx = team.Period.idxmax(2)
@@ -77,7 +77,6 @@ class PrepData(d6t.tasks.TaskPickle):
         tracking_away = tracking_away.iloc[list(events['Start Frame'] - 1)]
 
         # all attacking left-to-right
-        second_half_idx = data.Period.idxmax(2)
         event_columns = [c for c in events.columns if c[-1].lower() in ['x', 'y']]
         tracking_home_columns = [c for c in tracking_home.columns if c[-1].lower() in ['x', 'y']]
         tracking_away_columns = [c for c in tracking_away.columns if c[-1].lower() in ['x', 'y']]

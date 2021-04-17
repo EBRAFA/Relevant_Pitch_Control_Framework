@@ -31,8 +31,8 @@ class PrepData(d6t.tasks.TaskPickle):
             # to metric coordinates
             x_columns = [c for c in data.columns if c[-1].lower() == 'x']
             y_columns = [c for c in data.columns if c[-1].lower() == 'y']
-            data[x_columns] = (data[x_columns] - 0.5) * field_dimen[0]
-            data[y_columns] = -1 * (data[y_columns] - 0.5) * field_dimen[1]
+            data.loc[:, x_columns] = (data[x_columns] - 0.5) * field_dimen[0]
+            data.loc[:, y_columns] = -1 * (data[y_columns] - 0.5) * field_dimen[1]
 
         # calculate players velocities
         for team in [tracking_home, tracking_away]:
@@ -67,9 +67,9 @@ class PrepData(d6t.tasks.TaskPickle):
                     vy.loc[second_half_idx:] = np.convolve(vy.loc[second_half_idx:], ma_window, mode='same')
 
                 # put player speed in x,y direction, and total speed back in the data frame
-                team[player + "_vx"] = vx
-                team[player + "_vy"] = vy
-                team[player + "_speed"] = np.sqrt(vx ** 2 + vy ** 2)
+                team.loc[:, player + "_vx"] = vx
+                team.loc[:, player + "_vy"] = vy
+                team.loc[:, player + "_speed"] = np.sqrt(vx ** 2 + vy ** 2)
 
         # filter "event", "tracking_home" and "tracking_away" dataframes using "selected_events['frames']"
         events = events[events['Type'].isin(['PASS', 'SHOT'])]
@@ -83,8 +83,8 @@ class PrepData(d6t.tasks.TaskPickle):
         tracking_away_columns = [c for c in tracking_away.columns if c[-1].lower() in ['x', 'y']]
         events.loc[events.Period == 2, event_columns] *= -1
         events.loc[events.Team == 'Away', event_columns] *= -1
-        tracking_home['Team'] = np.array(events['Team'])
-        tracking_away['Team'] = np.array(events['Team'])
+        tracking_home.loc[:, 'Team'] = np.array(events['Team'])
+        tracking_away.loc[:, 'Team'] = np.array(events['Team'])
         tracking_home.loc[(tracking_home['Team'] == 'Away') & (tracking_home['Period'] == 1), tracking_home_columns] *= -1
         tracking_home.loc[(tracking_home['Team'] == 'Home') & (tracking_home['Period'] == 2), tracking_home_columns] *= -1
         tracking_away.loc[(tracking_away['Team'] == 'Away') & (tracking_away['Period'] == 1), tracking_away_columns] *= -1

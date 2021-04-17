@@ -11,7 +11,7 @@ import relevantpitchcontrol as rpc
 import execution as ex
 import visualize as viz
 
-d6t.settings.check_dependencies = False
+#d6t.settings.check_dependencies = False
 
 #d6t.run(dp.PrepData(gameid=2))
 

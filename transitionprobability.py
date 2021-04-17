@@ -52,15 +52,23 @@ class CalcTransitionProbabilityFrame(d6t.tasks.TaskPickle):
         # initialise transition grid
         TP = np.zeros(shape=(len(ygrid), len(xgrid)))
 
-        # calculate transition model at each location on the pitch
-        for i in range(len(ygrid)):
-            for j in range(len(xgrid)):
-                target_position = np.array([xgrid[j], ygrid[i]])
-                d6t.run(CalcTransitionProbabilityTarget(target_position=tuple(target_position), ball_start_pos=tuple(ball_start_pos), PPCFa=PPCFa[-1, i, j]), execution_summary=False)
-                TP[i, j] = CalcTransitionProbabilityTarget(target_position=tuple(target_position), ball_start_pos=tuple(ball_start_pos),
-                                                           PPCFa=PPCFa[-1, i, j]).output().load()
+        if np.sum(PPCFa[-1]) == 0:
+            N_TP = TP
+            self.save({'N_TP': N_TP, 'TP': TP, 'xgrid': xgrid, 'ygrid': ygrid})
 
-        # normalize T to unity
-        N_TP = TP / np.sum(TP)
+        else:
+            # calculate transition model at each location on the pitch
+            for i in range(len(ygrid)):
+                for j in range(len(xgrid)):
+                    target_position = np.array([xgrid[j], ygrid[i]])
+                    d6t.run(CalcTransitionProbabilityTarget(target_position=tuple(target_position),
+                                                            ball_start_pos=tuple(ball_start_pos),
+                                                            PPCFa=PPCFa[-1, i, j]), execution_summary=False)
+                    TP[i, j] = CalcTransitionProbabilityTarget(target_position=tuple(target_position),
+                                                               ball_start_pos=tuple(ball_start_pos),
+                                                               PPCFa=PPCFa[-1, i, j]).output().load()
 
-        self.save({'N_TP': N_TP, 'TP': TP, 'xgrid': xgrid, 'ygrid': ygrid})
+            # normalize T to unity
+            N_TP = TP / np.sum(TP)
+
+            self.save({'N_TP': N_TP, 'TP': TP, 'xgrid': xgrid, 'ygrid': ygrid})

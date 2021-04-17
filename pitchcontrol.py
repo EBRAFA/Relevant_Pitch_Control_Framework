@@ -90,7 +90,8 @@ class CalcPitchControlTarget(d6t.tasks.TaskCache):
 
 @d6t.inherits(gt.TrackingTupleInfo, gt.PitchInfo)
 class CalcPitchControlFrame(d6t.tasks.TaskPickle):
-    # Required parameters are gameid and rownumber
+    # Required parameters are gameid, rownumber and in_execution
+    in_execution = luigi.BoolParameter(default=False)
 
     def requires(self):
         return {'params': pr.PCModelParameters(),
@@ -122,7 +123,7 @@ class CalcPitchControlFrame(d6t.tasks.TaskPickle):
         for i in range(len(ygrid)):
             for j in range(len(xgrid)):
                 target_position = np.array([xgrid[j], ygrid[i]])
-                d6t.settings.log_level = 'ERROR'
+                d6t.settings.log_level = 'CRITICAL'
                 d6t.run(CalcPitchControlTarget(gameid=self.gameid, rownumber=self.rownumber, target_position=target_position), execution_summary=False)
                 PCT = CalcPitchControlTarget(gameid=self.gameid, rownumber=self.rownumber, target_position=target_position).output().load()
                 PPCFa[-1, i, j] = PCT['PPCFatt']
@@ -147,7 +148,21 @@ class CalcPitchControlFrame(d6t.tasks.TaskPickle):
                                 PPCFd[k, i, j] = player.PPCF
 
         # check probabilitiy sums within convergence
-        checksum = np.sum(PPCFa + PPCFd) / float(n_grid_cells_y * self.n_grid_cells_x)
-        assert 1 - checksum < params['model_converge_tol'], "Checksum failed: %1.3f" % (1 - checksum)
+        checksum = np.sum(PPCFa[-1] + PPCFd[-1]) / float(n_grid_cells_y * self.n_grid_cells_x)
+
+        if self.in_execution:
+            if 1 - checksum < params['model_converge_tol']:
+                if team_in_possession == 'Home':
+                    # initialise pitch control grids for attacking and defending teams
+                    PPCFa = np.zeros(shape=(len(home_ids) + 1, len(ygrid), len(xgrid)))
+                    PPCFd = np.zeros(shape=(len(away_ids) + 1, len(ygrid), len(xgrid)))
+
+                else:
+                    # initialise pitch control grids for attacking and defending teams
+                    PPCFa = np.zeros(shape=(len(away_ids) + 1, len(ygrid), len(xgrid)))
+                    PPCFd = np.zeros(shape=(len(home_ids) + 1, len(ygrid), len(xgrid)))
+
+        else:
+            assert 1 - checksum < params['model_converge_tol'], "Checksum failed: %1.3f" % (1 - checksum)
 
         self.save({'PPCFa': PPCFa, 'PPCFd': PPCFd, 'xgrid': xgrid, 'ygrid': ygrid})

@@ -42,6 +42,9 @@ class RPCExecution(d6t.tasks.TaskPickle):
             d6t.run(rpc.CalcRelevantPitchControlFrame(gameid=self.gameid, rownumber=events.loc[home_rows[i], 'Start Frame'], in_execution=True))
             RPCa_Home[i] = rpc.CalcRelevantPitchControlFrame(gameid=self.gameid, rownumber=events.loc[home_rows[i], 'Start Frame'], in_execution=True).output().load()['RPCa']
             RPCd_Away[i] = rpc.CalcRelevantPitchControlFrame(gameid=self.gameid, rownumber=events.loc[home_rows[i], 'Start Frame'], in_execution=True).output().load()['RPCd']
+            if np.sum(RPCa_Home[i][-1]) == 0:
+                RPCa_Home = np.delete(RPCa_Home, obj=i, axis=0)
+                RPCd_Away = np.delete(RPCd_Away, obj=i, axis=0)
 
         for i in tqdm(range(len(away_rows))):
             d6t.settings.check_dependencies = False
@@ -49,5 +52,8 @@ class RPCExecution(d6t.tasks.TaskPickle):
             d6t.run(rpc.CalcRelevantPitchControlFrame(gameid=self.gameid, rownumber=events.loc[away_rows[i], 'Start Frame'], in_execution=True))
             RPCa_Away[i] = rpc.CalcRelevantPitchControlFrame(gameid=self.gameid, rownumber=events.loc[away_rows[i], 'Start Frame'], in_execution=True).output().load()['RPCa']
             RPCd_Home[i] = rpc.CalcRelevantPitchControlFrame(gameid=self.gameid, rownumber=events.loc[away_rows[i], 'Start Frame'], in_execution=True).output().load()['RPCd']
+            if np.sum(RPCa_Away[i][-1]) == 0:
+                RPCa_Away = np.delete(RPCa_Away, obj=i, axis=0)
+                RPCd_Home = np.delete(RPCd_Home, obj=i, axis=0)
 
         self.save({'RPCa_Home': RPCa_Home, 'RPCd_Home': RPCd_Home, 'RPCa_Away': RPCa_Away, 'RPCd_Away': RPCd_Away})

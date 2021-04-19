@@ -151,7 +151,7 @@ class CalcPitchControlFrame(d6t.tasks.TaskPickle):
         checksum = np.sum(PPCFa[-1] + PPCFd[-1]) / float(n_grid_cells_y * self.n_grid_cells_x)
 
         if self.in_execution:
-            if 1 - checksum < params['model_converge_tol']:
+            if 1 - checksum >= params['model_converge_tol']:
                 if team_in_possession == 'Home':
                     # initialise pitch control grids for attacking and defending teams
                     PPCFa = np.zeros(shape=(len(home_ids) + 1, len(ygrid), len(xgrid)))

@@ -15,7 +15,7 @@ import visualize as viz
 
 #d6t.run(dp.PrepData(gameid=2))
 
-d6t.run(ex.RPCExecution(gameid=1))
+d6t.run(ex.RPCExecution(gameid=2))
 
 #d6t.run(viz.PlotFrameTracking(gameid=1, rownumber=5663, do_relevantpitchcontrol='Away'))
 #d6t.run(viz.PlotFrameTracking(gameid=1, rownumber=124504, do_transitionprobability=True))

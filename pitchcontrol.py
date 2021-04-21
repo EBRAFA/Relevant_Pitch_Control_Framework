@@ -82,8 +82,8 @@ class CalcPitchControlTarget(d6t.tasks.TaskCache):
             ptot = PPCFdef[i] + PPCFatt[i]  # total pitch control probability
             i += 1
 
-        if i >= dT_array.size:
-            print("Integration failed to converge: %1.3f" % (ptot))
+        '''if i >= dT_array.size:
+            print("Integration failed to converge: %1.3f" % (ptot))'''
 
         self.save({'PPCFatt': PPCFatt[i - 1], 'PPCFdef': PPCFdef[i - 1],
                    'attacking_players': attacking_players, 'defending_players': defending_players})

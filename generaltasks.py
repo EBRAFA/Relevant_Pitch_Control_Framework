@@ -56,11 +56,7 @@ class GetRowTracking(d6t.tasks.TaskCachePandas):
         else:
             tracking = self.input()['tracking_away'].load()
 
-        for i in range(len(tracking)):
-            if tracking.iloc[i].name == self.rownumber:
-                break
-
-        self.save(tracking.iloc[i])
+        self.save(tracking.loc[self.rownumber, tracking.columns])
 
 @d6t.inherits(TrackingTupleInfo)
 class GetBallPosition(d6t.tasks.TaskCache):
@@ -88,14 +84,9 @@ class GetTeamInPossession(d6t.tasks.TaskCache):
         return self.clone(dp.PrepData)
 
     def run(self):
-        events = self.input()['events'].load()
+        tracking_home = self.input()['tracking_home'].load()
 
-        for i in range(len(events)):
-            if events['Start Frame'].iloc[i] > self.rownumber:
-                team = events['Team'].iloc[i - 1]
-                break
-
-        self.save(team)
+        self.save(tracking_home.loc[self.rownumber, 'Team'])
 
 @d6t.inherits(TrackingTupleInfo)
 class InitialisePlayers(d6t.tasks.TaskCache):

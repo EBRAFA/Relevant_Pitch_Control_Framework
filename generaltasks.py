@@ -5,7 +5,7 @@ import luigi
 
 # Project imports
 import dataimport as di
-import dataprocessing as dp
+import preprocessing as pre
 import parameters as pr
 import player as pl
 
@@ -47,7 +47,7 @@ class GetRowTracking(d6t.tasks.TaskCachePandas):
     team = luigi.Parameter()  # 'Home' or 'Away'
 
     def requires(self):
-        return self.clone(dp.PrepData)
+        return self.clone(pre.PrepData)
 
     def run(self):
         if self.team == 'Home':
@@ -81,12 +81,14 @@ class GetTeamInPossession(d6t.tasks.TaskCache):
     '''
 
     def requires(self):
-        return self.clone(dp.PrepData)
+        return self.clone(pre.PrepData)
 
     def run(self):
         tracking_home = self.input()['tracking_home'].load()
 
-        self.save(tracking_home.loc[self.rownumber, 'Team'])
+        team_in_possession = tracking_home.loc[self.rownumber, 'Team']
+
+        self.save(team_in_possession)
 
 @d6t.inherits(TrackingTupleInfo)
 class InitialisePlayers(d6t.tasks.TaskCache):

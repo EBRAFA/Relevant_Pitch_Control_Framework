@@ -6,7 +6,7 @@ import luigi as lg
 from tqdm import tqdm
 
 # Project imports
-import dataprocessing as dp
+import preprocessing as pre
 import generaltasks as gt
 import relevantpitchcontrol as rpc
 
@@ -15,7 +15,7 @@ class RPCExecution(d6t.tasks.TaskPickle):
     gameid = lg.IntParameter()
 
     def requires(self):
-        return {'events': self.clone(dp.PrepData),
+        return {'events': self.clone(pre.PrepData),
                 'ids': self.clone(gt.GetPlayerIDs)}
 
     def run(self):
@@ -39,7 +39,7 @@ class RPCExecution(d6t.tasks.TaskPickle):
         home_int_fail = []
         away_int_fail = []
 
-        for i in tqdm(range(len(home_rows))):
+        for i in tqdm(range(len(home_rows)), desc="executing game{} home events".format(self.gameid)):
             d6t.settings.check_dependencies = False
             d6t.settings.log_level = 'ERROR'
             d6t.run(rpc.CalcRelevantPitchControlFrame(gameid=self.gameid, rownumber=events.loc[home_rows[i], 'Start Frame'], in_execution=True))
@@ -48,10 +48,11 @@ class RPCExecution(d6t.tasks.TaskPickle):
             if np.sum(RPCa_Home[i][-1]) == 0:
                 home_int_fail.append(i)
 
-        RPCa_Home = np.delete(RPCa_Home, obj=np.array(home_int_fail), axis=0)
-        RPCd_Away = np.delete(RPCd_Away, obj=np.array(home_int_fail), axis=0)
+        if len(home_int_fail) > 0:
+            RPCa_Home = np.delete(RPCa_Home, obj=np.array(home_int_fail), axis=0)
+            RPCd_Away = np.delete(RPCd_Away, obj=np.array(home_int_fail), axis=0)
 
-        for i in tqdm(range(len(away_rows))):
+        for i in tqdm(range(len(away_rows)), desc="executing game{} away events".format(self.gameid)):
             d6t.settings.check_dependencies = False
             d6t.settings.log_level = 'ERROR'
             d6t.run(rpc.CalcRelevantPitchControlFrame(gameid=self.gameid, rownumber=events.loc[away_rows[i], 'Start Frame'], in_execution=True))
@@ -60,7 +61,9 @@ class RPCExecution(d6t.tasks.TaskPickle):
             if np.sum(RPCa_Away[i][-1]) == 0:
                 away_int_fail.append(i)
 
-        RPCa_Away = np.delete(RPCa_Away, obj=np.array(away_int_fail), axis=0)
-        RPCd_Home = np.delete(RPCd_Home, obj=np.array(away_int_fail), axis=0)
+        if len(away_int_fail) > 0:
+            RPCa_Away = np.delete(RPCa_Away, obj=np.array(away_int_fail), axis=0)
+            RPCd_Home = np.delete(RPCd_Home, obj=np.array(away_int_fail), axis=0)
 
-        self.save({'RPCa_Home': RPCa_Home, 'RPCd_Home': RPCd_Home, 'RPCa_Away': RPCa_Away, 'RPCd_Away': RPCd_Away})
+        self.save({'RPCa_Home': RPCa_Home, 'RPCd_Home': RPCd_Home, 'RPCa_Away': RPCa_Away, 'RPCd_Away': RPCd_Away,
+                   'home_int_fail': home_int_fail, 'away_int_fail': away_int_fail})

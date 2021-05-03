@@ -8,7 +8,7 @@ import pitchcontrol as pc
 import transitionprobability as tp
 
 @d6t.inherits(pc.CalcPitchControlFrame)
-class CalcRelevantPitchControlFrame(d6t.tasks.TaskPickle):
+class CalcRelevantPitchControlFrame(d6t.tasks.TaskCache):
     '''
     Calculates the relevant pitch control for an entire frame.
     Returns a (32, 50) matrix with the values corresponding to
@@ -31,6 +31,9 @@ class CalcRelevantPitchControlFrame(d6t.tasks.TaskPickle):
             TP = self.input()['transitionprobability'].load()['N_TP']
         else:
             TP = self.input()['transitionprobability'].load()['TP']
+
+        checksum = np.sum(PPCFa[-1] + PPCFd[-1]) / float(50 * 32)
+        assert 1 - checksum < 0.01, "Checksum failed: %1.3f" % (1 - checksum)
 
         RPCa = np.zeros(shape=(len(PPCFa), len(ygrid), len(xgrid)))
         for i in range(len(PPCFa)):

@@ -91,7 +91,7 @@ class CalcPitchControlTarget(d6t.tasks.TaskCache):
 @d6t.inherits(gt.TrackingTupleInfo, gt.PitchInfo)
 class CalcPitchControlFrame(d6t.tasks.TaskPickle):
     # Required parameters are gameid, rownumber and in_execution
-    in_execution = luigi.BoolParameter(default=False)
+    in_execution = luigi.BoolParameter(default=True)
 
     def requires(self):
         return {'params': pr.PCModelParameters(),

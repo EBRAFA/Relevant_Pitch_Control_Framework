@@ -71,22 +71,32 @@ class PrepData(d6t.tasks.TaskPickle):
                 team.loc[:, player + "_vy"] = vy
                 team.loc[:, player + "_speed"] = np.sqrt(vx ** 2 + vy ** 2)
 
-        # filter "event", "tracking_home" and "tracking_away" dataframes using "selected_events['frames']"
-        events = events[events['Type'].isin(['PASS', 'SHOT'])]
-        tracking_home = tracking_home.iloc[list(events['Start Frame'] - 1)]
-        tracking_away = tracking_away.iloc[list(events['Start Frame'] - 1)]
+        # filter "event", "tracking_home" and "tracking_away" dataframes
+        events = events.loc[(events['Type'] == 'PASS') & (events['End Frame'] != 59923), :]
+        tracking_home = tracking_home.loc[np.unique(events['Start Frame']), :]
+        tracking_away = tracking_away.loc[np.unique(events['Start Frame']), :]
+        tracking_home.loc[:, 'Team'] = np.array(events['Team'])
+        tracking_away.loc[:, 'Team'] = np.array(events['Team'])
 
-        # all attacking left-to-right
         event_columns = [c for c in events.columns if c[-1].lower() in ['x', 'y']]
         tracking_home_columns = [c for c in tracking_home.columns if c[-1].lower() in ['x', 'y']]
         tracking_away_columns = [c for c in tracking_away.columns if c[-1].lower() in ['x', 'y']]
-        events.loc[events.Period == 2, event_columns] *= -1
-        events.loc[events.Team == 'Away', event_columns] *= -1
-        tracking_home.loc[:, 'Team'] = np.array(events['Team'])
-        tracking_away.loc[:, 'Team'] = np.array(events['Team'])
-        tracking_home.loc[(tracking_home['Team'] == 'Away') & (tracking_home['Period'] == 1), tracking_home_columns] *= -1
-        tracking_home.loc[(tracking_home['Team'] == 'Home') & (tracking_home['Period'] == 2), tracking_home_columns] *= -1
-        tracking_away.loc[(tracking_away['Team'] == 'Away') & (tracking_away['Period'] == 1), tracking_away_columns] *= -1
-        tracking_away.loc[(tracking_away['Team'] == 'Home') & (tracking_away['Period'] == 2), tracking_away_columns] *= -1
+
+        # all attacking left-to-right
+        if self.gameid == 1:
+            events.loc[events.Period == 2, event_columns] *= -1
+            events.loc[events.Team == 'Away', event_columns] *= -1
+            tracking_home.loc[(tracking_home['Team'] == 'Away') & (tracking_home['Period'] == 1), tracking_home_columns] *= -1
+            tracking_home.loc[(tracking_home['Team'] == 'Home') & (tracking_home['Period'] == 2), tracking_home_columns] *= -1
+            tracking_away.loc[(tracking_away['Team'] == 'Away') & (tracking_away['Period'] == 1), tracking_away_columns] *= -1
+            tracking_away.loc[(tracking_away['Team'] == 'Home') & (tracking_away['Period'] == 2), tracking_away_columns] *= -1
+
+        elif self.gameid == 2:
+            events.loc[events.Period == 1, event_columns] *= -1
+            events.loc[events.Team == 'Away', event_columns] *= -1
+            tracking_home.loc[(tracking_home['Team'] == 'Home') & (tracking_home['Period'] == 1), tracking_home_columns] *= -1
+            tracking_home.loc[(tracking_home['Team'] == 'Away') & (tracking_home['Period'] == 2), tracking_home_columns] *= -1
+            tracking_away.loc[(tracking_away['Team'] == 'Home') & (tracking_away['Period'] == 1), tracking_away_columns] *= -1
+            tracking_away.loc[(tracking_away['Team'] == 'Away') & (tracking_away['Period'] == 2), tracking_away_columns] *= -1
 
         self.save({'events': events, 'tracking_home': tracking_home, 'tracking_away': tracking_away})

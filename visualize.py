@@ -173,6 +173,7 @@ class PlotFrameTracking(d6t.tasks.TaskCache):
             d6t.settings.check_dependencies = False
 
             if self.do_pitchcontrol or self.do_player_pc:
+                d6t.settings.check_dependencies = False
                 d6t.run(pc.CalcPitchControlFrame(gameid=self.gameid, rownumber=self.rownumber))
                 pitchcontrol = pc.CalcPitchControlFrame(gameid=self.gameid, rownumber=self.rownumber).output().load()
                 PPCFa = pitchcontrol['PPCFa']
@@ -308,17 +309,17 @@ class PlotFrameTracking(d6t.tasks.TaskCache):
 
         self.save({'fig': fig, 'ax': ax})
 
-@d6t.inherits(cl.ClusteringRPCVectors, PlotPitch)
+@d6t.inherits(cl.KMeansTeam, PlotPitch)
 class PlotRPCSurfaces(d6t.tasks.TaskCache):
     clusterid = luigi.IntParameter()
     surface_color = luigi.Parameter()
     n_grid_cells_x = luigi.IntParameter(default=50)
 
     def requires(self):
-        return {'clustering': self.clone(cl.ClusteringRPCVectors)}
+        return cl.KMeansTeam(n_clusters=self.n_clusters)
 
     def run(self):
-        centers = self.input()['clustering'].load()['centers']
+        centers = self.input().load()['centers']
         rpc_surface = centers[self.clusterid].reshape((50, 32), order='F')
 
         d6t.run(PlotPitch(), forced_all=True)
